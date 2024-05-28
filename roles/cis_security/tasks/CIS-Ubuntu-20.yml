@@ -1,4 +1,5 @@
 ---
 # indclude the type file for Ubuntu 20 type machines
 
-- include: type-files/ubuntu-18-type.yml
+- name: Import tasks Ubuntu 20 (ubuntu 18)
+  ansible.builtin.include_tasks: type-files/ubuntu-18-type.yml

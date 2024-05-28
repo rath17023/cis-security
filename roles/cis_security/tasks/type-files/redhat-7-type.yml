@@ -114,7 +114,7 @@
     line: "install {{ item }} /bin/true"
     state: present
     create: true
-    mode: 0644
+    mode: '0644'
   with_items:
     - "{{ unused_filesystems }}"
 
@@ -417,7 +417,9 @@
     - 1.1.15
   block:
     - name: Determine if /dev/shm has nodev set
-      ansible.builtin.shell: cat /proc/mounts | /usr/bin/grep /dev/shm | /usr/bin/grep -v nodev
+      ansible.builtin.shell: |
+        set -o pipefail &&
+        cat /proc/mounts | /usr/bin/grep /dev/shm | /usr/bin/grep -v nodev
       register: devshm_nodev_out
       failed_when: devshm_nodev_out == "2"
       changed_when: false
@@ -437,7 +439,9 @@
     - 1.1.16
   block:
     - name: Determine if /dev/shm has nosuid set
-      ansible.builtin.shell: cat /proc/mounts | /usr/bin/grep /dev/shm | /usr/bin/grep -v nosuid
+      ansible.builtin.shell: |
+        set -o pipefail &&
+        cat /proc/mounts | /usr/bin/grep /dev/shm | /usr/bin/grep -v nosuid
       register: devshm_nosuid_out
       failed_when: devshm_nosuid_out == "2"
       changed_when: false
@@ -457,7 +461,9 @@
     - 1.1.17
   block:
     - name: 1.1.17 - Determine if /dev/shm has noexec set
-      ansible.builtin.shell: cat /proc/mounts | /usr/bin/grep /dev/shm | /usr/bin/grep -v noexec
+      ansible.builtin.shell: |
+        set -o pipefail &&
+        cat /proc/mounts | /usr/bin/grep /dev/shm | /usr/bin/grep -v noexec
       register: devshm_noexec_out
       failed_when: devshm_noexec_out == "2"
       changed_when: false
@@ -629,7 +635,7 @@
         dest: /etc/systemd/system/aidecheck.service
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
         setype: systemd_unit_file_t
       notify: Restart aidecheck
       tags:
@@ -651,7 +657,7 @@
         dest: /etc/systemd/system/aidecheck.timer
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
         setype: systemd_unit_file_t
       notify: Restart aidecheck
       tags:
@@ -693,7 +699,7 @@
     path: "{{ item }}"
     owner: root
     group: root
-    mode: 0600
+    mode: '0600'
   loop:
     - "{{ grub_cfg_path }}"
     - /boot/grub2/grubenv
@@ -723,7 +729,7 @@
     # The sysctl module will set variables in /etc/sysctl.conf and tell sysctl
     #  to reload them immediately if 'reload' is set to 'true'.
     - name: 1.5.1 - Ensure core dumps are restricted
-      ansible.builtin.sysctl:
+      ansible.posix.sysctl:
         name: fs.suid_dumpable
         value: "0"
         state: present
@@ -745,7 +751,9 @@
   block:
     # To see if it is set already, we poll the joural with a grep and register a variable
     - name: Search journal to see if protection was active at boot
-      ansible.builtin.shell: "/usr/bin/journalctl | /usr/bin/grep 'protection: active' "
+      ansible.builtin.shell: |
+        set -o pipefail &&
+        "/usr/bin/journalctl | /usr/bin/grep 'protection: active' "
       register: nx_protection
       changed_when: false
       check_mode: false
@@ -760,7 +768,7 @@
 - name: 1.5.3 - Ensure address space layout reandomization (ASLR) is enabled
     # The sysctl module will set variables in /etc/sysctl.conf and tell sysctl
     #  to reload them immediately if 'reload' is set to 'true'.
-  ansible.builtin.sysctl:
+  ansible.posix.sysctl:
     name: kernel.randomize_va_space
     value: "2"
     reload: true
@@ -835,7 +843,7 @@
         path: /.autorelabel
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
         state: touch
       when: ansible_selinux.status == "disabled" and selinux | lower != "disabled"
       notify: Reboot
@@ -880,7 +888,9 @@
       block:
         # use ps and grep to find services running under initrc context
         - name: 1.6.1.5 - Generate report on unconfined running services
-          ansible.builtin.shell: /usr/bin/ps -eZ | egrep "initrc"
+          ansible.builtin.shell: |
+            set -o pipefail &&
+            /usr/bin/ps -eZ | egrep "initrc"
           register: unconfined_services_out
           failed_when: unconfined_services_out.rc == "2"
           changed_when: false
@@ -904,7 +914,7 @@
     dest: /etc/motd
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   tags:
     - 1.7.1.1
     - 1.7.1.4
@@ -916,7 +926,7 @@
     dest: /etc/issue
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   tags:
     - 1.7.1.2
     - 1.7.1.5
@@ -928,7 +938,7 @@
     dest: /etc/issue.net
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   tags:
     - 1.7.1.3
     - 1.7.1.6
@@ -941,27 +951,27 @@
   block:
     # Add our required pieces to the dconf file for GDM
     - name: 1.7.2 - Set up the dconf profile for GDM
-      ansible.builtin.file:
-        path: /etc/dconf/profile/gdm
+      ansible.builtin.copy:
+        dest: /etc/dconf/profile/gdm
         owner: root
         group: root
-        mode: 0644
-        block: |
+        mode: '0644'
+        content: |
           user-db:user
           system-db:gdm
           file-db:/usr/share/gdm/greeter-dconf-defaults
 
     # Set the greeter message
     - name: 1.7.2 - Set GDM to use banner message
-      ansible.builtin.file:
-        path: /etc/dconf/db/gdm.d/01-banner-message
-        owern: root
+      ansible.builtin.copy:
+        dest: /etc/dconf/db/gdm.d/01-banner-message
+        owner: root
         group: root
-        mode: 0644
-        block: |
+        mode: '0644'
+        content: |
           [org/gnome/login-screen]
           banner-message-enable=true
-          banner-message-text='Authorized uses only. All activity may be monitored and reported.'
+          banner-message-text='Authorized uses only. All activity may be monitored and reported.
 
 ## Part 2, Services ###
 # Remove old, unused, insecure services
@@ -1014,7 +1024,7 @@
     dest: /etc/{{ time_service }}.conf
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   when: time_service == "chrony" or time_service == "ntp"
   notify: Restart {{ time_service }}d
   tags:
@@ -1027,7 +1037,7 @@
     dest: /etc/sysconfig/{{ time_service }}d
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   when: time_service == "chrony" or time_service == "ntp"
   notify: Restart {{ time_service }}d
   tags:
@@ -1085,17 +1095,21 @@
     # Set the current run level. The systemctl module does not handle the
     #  get-default routine, so we are looking at the target of the symlink at /etc/systemd/system/default.target
     - name: 2.2.2 - Set current runlevel (non graphical)
-      ansible.builtin.command: /usr/bin/systemctl isolate multi-user.target
+      ansible.builtin.systemd:
+        name: multi-user.target
+        state: started
       register: isolate_out
-      changed_when: isolate_out.changed
+      changed_when: isolate_out is changed
       when: default_runlevel_out.stat.lnk_target is search("graphical.target") and not graphical_interface
       tags:
         - 2.2.2
 
     - name: 2.2.2 - Set current runlevel (graphical)
-      ansible.builtin.command: /usr/bin/systemctl isolate graphical.target
+      ansible.builtin.systemd:
+        name: graphical.target
+        state: started
       register: isolate_out
-      changed_when: isolate_out.changed
+      changed_when: isolate_out is changed
       when: default_runlevel_out.stat.lnk_target is search("multi-user.target") and graphical_interface
       tags:
         - 2.2.2
@@ -1305,7 +1319,7 @@
     - 3.1.0
   block:
     - name: 3.1 - Set ipv4 networking parameters (OFF)
-      ansible.builtin.sysctl:
+      ansible.posix.sysctl:
         name: "{{ item }}"
         value: "0"
         reload: true
@@ -1318,7 +1332,7 @@
       notify: Flush network routes
 
     - name: 3.1 - Set ipv6 networking parameters (OFF)
-      ansible.builtin.sysctl:
+      ansible.posix.sysctl:
         name: "{{ item }}"
         value: "0"
         reload: true
@@ -1334,7 +1348,7 @@
     - 3.2.0
   block:
     - name: 3.2 - Set ipv4 network parameters (OFF)
-      ansible.builtin.sysctl:
+      ansible.posix.sysctl:
         name: "{{ item }}"
         value: "0"
         reload: true
@@ -1350,7 +1364,7 @@
       notify: Flush network routes
 
     - name: 3.2.[4-8] - Set ipv4 networking parameters (ON)
-      ansible.builtin.sysctl:
+      ansible.posix.sysctl:
         name: "{{ item }}"
         value: "1"
         reload: true
@@ -1367,7 +1381,7 @@
       notify: Flush network routes
 
     - name: 3.2 - Set ipv6 networking parameters (OFF)
-      ansible.builtin.sysctl:
+      ansible.posix.sysctl:
         name: "{{ item }}"
         value: "0"
         reload: true
@@ -1389,7 +1403,7 @@
     3.3.0
   block:
     - name: 3.3 - Set ipv6 networking parameters (OFF)
-      ansible.builtin.sysctl:
+      ansible.posix.sysctl:
         name: "{{ item }}"
         value: "0"
         reload: true
@@ -1453,7 +1467,7 @@
         dest: /etc/hosts.allow
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
         line: "ALL: 127.0.0.1"
 
     # 3.4.3 is heavy handed so we aren't implementing it
@@ -1466,7 +1480,7 @@
         path: "{{ item }}"
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
       loop:
         - /etc/hosts.allow # (3.4.4)
         - /etc/hosts.deny # (3.4.5)
@@ -1514,7 +1528,7 @@
         line: "install {{ item }} /bin/true"
         state: present
         create: true
-        mode: 0644
+        mode: '0644'
       with_items:
         - "{{ uncommon_network }}"
 
@@ -1532,7 +1546,7 @@
       notify: Start firewalld
 
     - name: 3.6.1 - Disable iptables
-      ansible.builtin.service:
+      ansible.builtin.systemd:
         name: iptables
         state: stopped
         enabled: false
@@ -1572,7 +1586,10 @@
         name: firewalld
         state: stopped
         enabled: false
-        ignore_errors: true
+      register: firewalld_result
+      failed_when: >
+        'Failed to stop firewalld.service' in firewalld_result.msg or
+        'Could not find the requested service' not in firewalld_result.msg
 
 - name: Notify user to configure firewall policy
   ansible.builtin.debug:
@@ -1656,7 +1673,7 @@
         src: audit_rules/datetime.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.4
@@ -1667,7 +1684,7 @@
         src: audit_rules/user-group-info.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         4.1.5
@@ -1678,7 +1695,7 @@
         src: audit_rules/network.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.6
@@ -1689,7 +1706,7 @@
         src: audit_rules/MAC-policy.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         4.1.7
@@ -1700,7 +1717,7 @@
         src: audit_rules/login.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         4.1.8
@@ -1711,7 +1728,7 @@
         src: audit_rules/sessions.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         4.1.9
@@ -1723,7 +1740,7 @@
         src: audit_rules/dac.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         4.1.10
@@ -1735,7 +1752,7 @@
         src: audit_rules/bad-file-access.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         4.1.11
@@ -1749,7 +1766,7 @@
         src: audit_rules/file-system-mounts.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         4.1.13
@@ -1760,7 +1777,7 @@
         src: audit_rules/delete.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         4.1.14
@@ -1771,7 +1788,7 @@
         src: audit_rules/sudolog.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         4.1.15
@@ -1783,7 +1800,7 @@
         src: audit_rules/modules.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         4.1.17
@@ -1795,7 +1812,7 @@
           -e 2
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         4.1.18
@@ -1821,7 +1838,7 @@
     dest: "/etc/rsyslog.d/{{ rsyslog_file }}"
     owner: root
     group: root
-    mode: 0640
+    mode: '0640'
   when: rsylog_file is defined
   tags:
     - 4.2.1.2
@@ -1833,7 +1850,7 @@
     line: "$FileCreateMode 0640"
     create: true
     state: present
-    mode: 0644
+    mode: '0644'
   tags:
     - 4.2.1.3
 
@@ -1888,7 +1905,7 @@
         create: true
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
       when: log_host is defined and log_host
 
     - name: 4.2.1.5 - Enable TCP Port listening on port {{ log_port }}
@@ -1899,7 +1916,7 @@
         create: true
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
       when: log_host is defined and log_host
 
 # 4.2.2 - Configure syslog-ng skipped as it is not a supported package from RHEL
@@ -1927,7 +1944,7 @@
     force: false
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   with_items:
     - /etc/cron.allow
     - /etc/at.allow
@@ -1948,7 +1965,7 @@
     path: /etc/crontab
     owner: root
     group: root
-    mode: 0600
+    mode: '0600'
   tags:
     - 5.1.2
 
@@ -1957,7 +1974,7 @@
     path: "{{ item }}"
     owner: root
     group: root
-    mode: 0700
+    mode: '0700'
   loop:
     - /etc/cron.hourly
     - /etc/cron.daily
@@ -1983,14 +2000,14 @@
         dest: /etc/ssh/sshd_config
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       tags:
         - 5.2.1
 
       # Control 5.2.2, Ensure SSH Protocol is set to 2, is not supported in OpenSSH
       # supplied by Red Hat (or SUSE 15) any longer. Omitting
 
-    - name: 5.2.3 - Set LogLevel to {{ ssh_log_level }} or more verbose, but not ansible.builtin.debug
+    - name: 5.2.3 - Set LogLevel to x or more verbose, but not ansible.builtin.debug - {{ ssh_log_level }}
       ansible.builtin.replace:
         path: /etc/ssh/sshd_config
         replace: "LogLevel {{ ssh_log_level | upper }}"
@@ -2011,7 +2028,7 @@
       tags:
         - 5.2.4
 
-    - name: 5.2.5 - Ensure SSH MaxAuthTires is set to {{ ssh_max_auth_tries }} or less
+    - name: 5.2.5 - Ensure SSH MaxAuthTires is set to x or less - {{ ssh_grace_time }}
       ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
         line: "MaxAuthTries {{ ssh_max_auth_tries }}"
@@ -2096,7 +2113,7 @@
       tags:
         - 5.2.12
 
-    - name: 5.2.13 - Ensure SSH LoginGraceTime is set to {{ ssh_grace_time }} or less
+    - name: 5.2.13 - Ensure SSH LoginGraceTime is set to x or less - {{ ssh_grace_time }}
       ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
         line: "LoginGraceTime {{ ssh_grace_time }}"
@@ -2166,7 +2183,7 @@
         insertafter: "^# ocredit ="
       when: password_req_digit
 
-    - name: 5.3.1 - Require at least {{ password_min_length }} characters in passwords
+    - name: 5.3.1 - Require at least x characters in passwords - {{ password_min_length }}
       ansible.builtin.lineinfile:
         path: /etc/security/pwquality.conf
         line: minlen = {{ password_min_length }}
@@ -2195,7 +2212,7 @@
       when: not sha512_exist.stdout is search("sha512")
       failed_when: false
 
-- name: 5.4.1.1 - Ensure password expiration is {{ password_expire_days }} days or less
+- name: 5.4.1.1 - Ensure password expiration is x days or less - {{ password_expire_days }}
   ansible.builtin.lineinfile:
     dest: /etc/login.defs
     regexp: '^PASS_MAX_DAYS\s*((?!{{ password_expire_days }}).)*$'
@@ -2224,14 +2241,14 @@
 
 # We need to do this the hard way because the user module that calls /usr/sbin/useradd does not support setting inactive days
 # The defaults perms are 0644 on the file, but after useradd is run against it, it changes to 0600, so we'll change it as well
-- name: 5.4.1.4 - Disable accounts that are inactive for {{ password_inactive_lock_days }} days after password expiration
+- name: 5.4.1.4 - Disable accounts that are inactive for x days after password expiration - {{ password_inactive_lock_days }}
   ansible.builtin.replace:
     path: /etc/default/useradd
     regexp: "^INACTIVE=((?!{{ password_inactive_lock_days }}).)*$"
     replace: "INACTIVE={{ password_inactive_lock_days }}"
     owner: root
     group: root
-    mode: 0600
+    mode: '0600'
   tags:
     - 5.4.1.4
 
@@ -2260,7 +2277,7 @@
   tags:
     - 5.4.4
 
-- name: 5.4.5 - Ensure shell timeout is {{ shell_timeout }} seconds or less
+- name: 5.4.5 - Ensure shell timeout is x seconds or less - {{ shell_timeout }}
   ansible.builtin.blockinfile:
     path: "{{ item }}"
     block: "TMOUT={{ shell_timeout }}"
@@ -2302,7 +2319,7 @@
     path: /etc/{{ item }}
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   loop:
     - passwd
     - group
@@ -2315,7 +2332,7 @@
     path: /etc/{{ item }}
     owner: root
     group: root
-    mode: 0000
+    mode: '0000'
   loop:
     - shadow
   tags:
@@ -2326,7 +2343,7 @@
     path: /etc/{{ item }}
     owner: root
     group: root
-    mode: 0000
+    mode: '0000'
   loop:
     - gshadow
   when: ansible_distribution != "SLES"
@@ -2338,7 +2355,7 @@
     path: /etc/{{ item }}
     owner: root
     group: root
-    mode: 0000
+    mode: '0000'
   with_items:
     - passwd-
     - shadow-
@@ -2353,7 +2370,7 @@
     path: /etc/{{ item }}
     owner: root
     group: root
-    mode: 0000
+    mode: '0000'
   with_items:
     - gshadow-
   when: ansible_distribution != "SLES"
@@ -2367,7 +2384,9 @@
     - 6.1.10
   block:
     - name: 6.1.10 - Find any world writiable files
-      ansible.builtin.shell: "/usr/bin/df --local -P | /usr/bin/awk {' if (NR!=1) print $6'} | /usr/bin/xargs -I '{}' find '{}' -xdev -type f -perm -0002"
+      ansible.builtin.shell: |
+        set -o pipefail &&
+        "/usr/bin/df --local -P | /usr/bin/awk {' if (NR!=1) print $6'} | /usr/bin/xargs -I '{}' find '{}' -xdev -type f -perm -0002"
       register: ww_files
       changed_when: false
       check_mode: false
@@ -2385,7 +2404,9 @@
     - 6.1.11
   block:
     - name: 6.1.11 - Find any unowned files
-      ansible.builtin.shell: "/usr/bin/df --local -P | /usr/bin/awk {' if (NR!=1) print $6'} | /usr/bin/xargs -I '{}' find '{}' -xdev -nouser"
+      ansible.builtin.shell: |
+        set -o pipefail &&
+        "/usr/bin/df --local -P | /usr/bin/awk {' if (NR!=1) print $6'} | /usr/bin/xargs -I '{}' find '{}' -xdev -nouser"
       register: uo_files
       changed_when: false
       check_mode: false
@@ -2403,7 +2424,9 @@
     - 6.1.12
   block:
     - name: 6.1.12 - Find any ungrouped files
-      ansible.builtin.shell: "/usr/bin/df --local -P | /usr/bin/awk {' if (NR!=1) print $6'} | /usr/bin/xargs -I '{}' find '{}' -xdev -nogroup"
+      ansible.builtin.shell: |
+        set -o pipefail &&
+        "/usr/bin/df --local -P | /usr/bin/awk {' if (NR!=1) print $6'} | /usr/bin/xargs -I '{}' find '{}' -xdev -nogroup"
       register: ug_files
       changed_when: false
       check_mode: false
@@ -2427,7 +2450,9 @@
     - 6.2.1
   block:
     - name: 6.2.1 - Check to see if there are any accounts with empty passwords
-      ansible.builtin.shell: "/usr/bin/cat /etc/shadow | awk -F: '($2 == \"\" ) { print $1 }'"
+      ansible.builtin.shell: |
+        set -o pipefail &&
+        "/usr/bin/cat /etc/shadow | awk -F: '($2 == \"\" ) { print $1 }'"
       changed_when: false
       register: empty_passwords
       check_mode: false
@@ -2459,7 +2484,9 @@
     - 6.2.5
   block:
     - name: Find accounts with UID of 0
-      ansible.builtin.shell: "/usr/bin/cat /etc/passwd | awk -F: '($3 == 0) { print $1 }'"
+      ansible.builtin.shell: |
+        set -o pipefail &&
+        "/usr/bin/cat /etc/passwd | awk -F: '($3 == 0) { print $1 }'"
       register: rootuid
       changed_when: rootuid.rc == 2
       check_mode: false

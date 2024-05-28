@@ -54,19 +54,19 @@
 
 - name: 1.1.1.1 - Add cramfs to list of unused filesystems
   ansible.builtin.set_fact:
-    unused_filesystems: "{{ unused_filesystems + [ 'cramfs' ] }}"
+    unused_filesystems: "{{ unused_filesystems + ['cramfs'] }}"
   tags:
     - 1.1.1.1
 
 - name: 1.1.1.2 - Add squashfs to list of unused filesystems
   ansible.builtin.set_fact:
-    unused_filesystems: "{{ unused_filesystems + [ 'squashfs' ] }}"
+    unused_filesystems: "{{ unused_filesystems + ['squashfs'] }}"
   tags:
     - 1.1.1.2
 
 - name: 1.1.1.3 - Add udf to list of unused filesystems
   ansible.builtin.set_fact:
-    unused_filesystems: "{{ unused_filesystems + [ 'udf' ] }}"
+    unused_filesystems: "{{ unused_filesystems + ['udf'] }}"
   tags:
     - 1.1.1.3
 
@@ -87,7 +87,7 @@
     create: true
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   loop:
     - unused_filesystems
   tags:
@@ -110,7 +110,7 @@
         state: directory
         owner: root
         group: root
-        mode: 0755
+        mode: '0755'
         setype: etc_t
 
     # Add content to the file we created using the blockinfile command.
@@ -125,7 +125,7 @@
           Where=/tmp
           Type=tmpfs
           Options=mode=1777,strictatime,noexec,nodev,nosuid
-        mode: 0644
+        mode: '0644'
         create: true
 
     # symbolic link is required for .wants/ folder
@@ -411,7 +411,9 @@
     - 1.1.8
   block:
     - name: 1.1.8.1 - Determine if /dev/shm has nodev set
-      ansible.builtin.shell: cat /proc/mounts | /bin/grep /dev/shm | /bin/grep -v nodev
+      ansible.builtin.shell: |
+        set -o pipefail &&
+        cat /proc/mounts | /bin/grep /dev/shm | /bin/grep -v nodev
       register: devshm_nodev_out
       failed_when: devshm_nodev_out == "2"
       changed_when: false
@@ -431,7 +433,9 @@
   # This whole block can be turned off by excluding the following tag(s)
   block:
     - name: 1.1.8.3 - Determine if /dev/shm has nosuid set
-      ansible.builtin.shell: cat /proc/mounts | /bin/grep /dev/shm | /bin/grep -v nosuid
+      ansible.builtin.shell: |
+        set -o pipefail &&
+        cat /proc/mounts | /bin/grep /dev/shm | /bin/grep -v nosuid
       register: devshm_nosuid_out
       failed_when: devshm_nosuid_out == "2"
       changed_when: false
@@ -450,7 +454,9 @@
     - 1.1.8.3
   block:
     - name: 1.1.8.3 - Determine if /dev/shm has noexec set
-      ansible.builtin.shell: cat /proc/mounts | /bin/grep /dev/shm | /bin/grep -v noexec
+      ansible.builtin.shell: |
+        set -o pipefail &&
+        cat /proc/mounts | /bin/grep /dev/shm | /bin/grep -v noexec
       register: devshm_noexec_out
       failed_when: devshm_noexec_out == "2"
       changed_when: false
@@ -476,8 +482,9 @@
     xargs -I '{}' find '{}' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null | xargs -I '{}' chmod a+t '{}'
   args:
     executable: /bin/bash
-  changed_when: false
-  ignore_errors: true
+  register: sticky_bit_result
+  changed_when: sticky_bit_result.stdout != ""
+  failed_when: "'FAILED' in sticky_bit_result.stderr"
   tags:
     - 1.1.21
 
@@ -501,7 +508,7 @@
     create: true
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   tags:
     - 1.1.10
 
@@ -602,7 +609,7 @@
             dest: /etc/systemd/system/aidecheck.service
             owner: root
             group: root
-            mode: 0644
+            mode: '0644'
             setype: systemd_unit_file_t
 
         - name: 1.3.2 - Enable aidecheck.service
@@ -619,7 +626,7 @@
             dest: /etc/systemd/system/aidecheck.timer
             owner: root
             group: root
-            mode: 0644
+            mode: '0644'
             setype: systemd_unit_file_t
 
         - name: 1.3.2 - Enable aidecheck.timer
@@ -632,7 +639,7 @@
         path: /etc/aide.conf.d/
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
         state: directory
       tags:
         - 1.3.3
@@ -667,7 +674,7 @@
     path: "{{ item }}"
     owner: root
     group: root
-    mode: 0600
+    mode: '0600'
   loop:
     - "{{ grub_cfg_path }}"
     - /boot/grub/grubenv
@@ -853,7 +860,7 @@
     dest: /etc/motd
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   when: motd_use is defined and motd_use
   tags:
     - 1.7.1
@@ -866,7 +873,7 @@
     dest: /etc/issue
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   when: issue_use is defined and issue_use
   tags:
     - 1.7.2
@@ -879,7 +886,7 @@
     dest: /etc/issue.net
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   when: issue_net_use is defined and issue_net_use
   tags:
     - 1.7.3
@@ -912,7 +919,7 @@
         path: "/etc/dconf/db/gdm.d"
         owner: root
         group: root
-        mode: 0755
+        mode: '0755'
         setype: etc_t
         state: directory
 
@@ -921,7 +928,7 @@
         path: /etc/dconf/profile/gdm
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
         setype: etc_t
         create: true
         block: |
@@ -934,7 +941,7 @@
         path: /etc/dconf/db/gdm.d/01-banner-message
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
         setype: etc_t
         create: true
         marker: "# {mark} Ansible Managed login-screen block"
@@ -950,7 +957,7 @@
         path: /etc/dconf/db/gdm.d/01-banner-message
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
         setype: etc_t
         insertafter: "[org/gnome/login-screen]"
         marker: "# {mark} Ansible Managed banner-message"
@@ -965,7 +972,7 @@
         path: /etc/dconf/db/gdm.d/01-banner-message
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
         setype: etc_t
         insertafter: "[org/gnome/login-screen]"
         marker: "# {mark} Ansible Managed disable-user-list"
@@ -979,7 +986,7 @@
         path: /etc/dconf/db/gdm.d/00-screensaver
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
         setype: etc_t
         create: true
         marker: "# {mark} Ansible Managed Timeouts"
@@ -1031,7 +1038,7 @@
     dest: /etc/chrony/chrony.conf
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   when: time_service == "chrony"
   tags:
     - 2.1.2.1
@@ -1042,7 +1049,7 @@
     owner: root
     group: root
     state: directory
-    mode: 0755
+    mode: '0755'
   when: time_service == "chrony"
   tags:
     - 2.1.2.1
@@ -1052,7 +1059,7 @@
     dest: /etc/chrony.d/chrony.conf
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
     content: !
       user {{ time_user }}
   when: time_service == "chrony"
@@ -1076,7 +1083,7 @@
     dest: /etc/timesyncd.conf
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   when: time_service == "timesyncd"
   notify: Restart timesyncd
   tags:
@@ -1109,118 +1116,118 @@
 
 - name: 2.2.2 - Remove avahi; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'avahi' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['avahi'] }}"
   tags:
     - 2.2.3
 
 - name: 2.2.4 - Remove dhcp; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'isc-dhcp-server' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['isc-dhcp-server'] }}"
   when: dhcp_server is defined and not dhcp_server
   tags:
     - 2.2.4
 
 - name: 2.2.5 - Remove slapd; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'slapd' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['slapd'] }}"
   tags:
     - 2.2.5
 
 - name: 2.2.6,2.3.6 - Remove nfs server; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'nfs-kernel-server' ] + ['rpcbind'] }}"
+    unneeded_packages: "{{ unneeded_packages + ['nfs-kernel-server'] + ['rpcbind'] }}"
   when: nfs_server is defined and not nfs_server
   tags:
     - 2.2.6
 
 - name: 2.2.7 - Remove bind9; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'bind9' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['bind9'] }}"
   when: dns_server is defined and not dns_server
   tags:
     - 2.2.7
 
 - name: 2.2.8 - Remove vsftpd; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'vsftpd' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['vsftpd'] }}"
   when: ftp_server is defined and not ftp_server
   tags:
     - 2.2.8
 
 - name: 2.2.9 - Remove httpd; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'apache2'] }}"
+    unneeded_packages: "{{ unneeded_packages + ['apache2'] }}"
   when: http_server is defined and not http_server
   tags:
     - 2.2.9
 
 - name: 2.2.10 - Remove dovecot; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'dovecot-imapd' ] + [ 'dovecot-pop3d'] }}"
+    unneeded_packages: "{{ unneeded_packages + ['dovecot-imapd'] + ['dovecot-pop3d'] }}"
   when: email_server is defined and not email_server
   tags:
     - 2.2.10
 
 - name: 2.2.11 - Remove samba; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'samba' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['samba'] }}"
   when: smb_server is defined and not smb_server
   tags:
     - 2.2.11
 
 - name: 2.2.12 - Remove squid; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'squid' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['squid'] }}"
   tags:
     - 2.2.12
 
 - name: 2.2.13 - Remove snmp; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'snmp' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['snmp'] }}"
   tags:
     - 2.2.13
 
 - name: 2.2.14,2.3.1 - Remove nis; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'nis' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['nis'] }}"
   tags:
     - 2.2.14
     - 2.3.1
 
 - name: 2.2.15 - Remove dnsmasq; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'dnsmasq' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['dnsmasq'] }}"
   tags:
     - 2.2.15
 
 - name: 2.2.17 - Remove rsync; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'rsync' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['rsync'] }}"
   tags:
     - 2.2.17
 
 
 - name: 2.3.2 - Remove rsh; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'rsh-client' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['rsh-client'] }}"
   tags:
     - 2.3.2
 
 - name: 2.3.3 - Remove talk; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'talk' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['talk'] }}"
   tags:
     - 2.3.3
 
 - name: 2.3.4 - Remove telnet; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'telnet' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['telnet'] }}"
   tags:
     - 2.3.4
 
 - name: 2.3.5 - Remove ldap-utils; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'ldap-utils' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['ldap-utils'] }}"
   tags:
     - 2.3.5
 
@@ -1301,25 +1308,25 @@
 
     - name: 3.4.1 - Add dccp to list of uncommon network protocols to disable
       ansible.builtin.set_fact:
-        uncommon_network: "{{ uncommon_network + [ 'dccp' ] }}"
+        uncommon_network: "{{ uncommon_network + ['dccp'] }}"
       tags:
         - 3.4.1
 
     - name: 3.4.2 - Add sctp to list of uncommon network protocols to disable
       ansible.builtin.set_fact:
-        uncommon_network: "{{ uncommon_network + [ 'sctp' ] }}"
+        uncommon_network: "{{ uncommon_network + ['sctp'] }}"
       tags:
         - 3.4.2
 
     - name: 3.4.3 - Add rds to list of uncommon network protocols to disable
       ansible.builtin.set_fact:
-        uncommon_network: "{{ uncommon_network + [ 'rds' ] }}"
+        uncommon_network: "{{ uncommon_network + ['rds'] }}"
       tags:
         - 3.4.3
 
     - name: 3.4.4 - Add tipc to list of uncommon network protocols to disable
       ansible.builtin.set_fact:
-        uncommon_network: "{{ uncommon_network + [ 'tipc' ] }}"
+        uncommon_network: "{{ uncommon_network + ['tipc'] }}"
       tags:
         - 3.4.4
 
@@ -1333,7 +1340,7 @@
         create: true
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
       loop:
         - uncommon_network
 
@@ -1345,7 +1352,7 @@
         create: true
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
       with_items:
         - "{{ uncommon_network }}"
 
@@ -1360,20 +1367,20 @@
 
 - name: 3.2.2 - Ensure IP forwarding is disabled
   ansible.builtin.set_fact:
-    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({ 'net.ipv4.ip_forward' : '0'}) }}"
+    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({'net.ipv4.ip_forward': '0'}) }}"
   tags:
     - 3.2.2
 
 - name: 3.2.2 - Ensure IP forwarding is disabled
   ansible.builtin.set_fact:
-    unneeded_ipv6_network: "{{ unneeded_ipv6_network | combine({ 'net.ipv6.conf.all.forwarding' : '0'}) }}"
+    unneeded_ipv6_network: "{{ unneeded_ipv6_network | combine({'net.ipv6.conf.all.forwarding': '0'}) }}"
   when: not ipv6_disable
   tags:
     - 3.2.2
 
 - name: 3.2.1 - Ensure packet redirect sending is disabled
   ansible.builtin.set_fact:
-    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({ item : '0' }) }}"
+    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({item: '0'}) }}"
   loop:
     - net.ipv4.conf.all.send_redirects
     - net.ipv4.conf.default.send_redirects
@@ -1382,7 +1389,7 @@
 
 - name: 3.3.1 - Ensure source routed packets are not accepted
   ansible.builtin.set_fact:
-    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({ item : '0' }) }}"
+    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({item: '0'}) }}"
   loop:
     - net.ipv4.conf.all.accept_source_route
     - net.ipv4.conf.default.accept_source_route
@@ -1391,7 +1398,7 @@
 
 - name: 3.3.1 - Ensure source routed packets are not accepted
   ansible.builtin.set_fact:
-    unneeded_ipv6_network: "{{ unneeded_ipv6_network | combine({ item : '0' }) }}"
+    unneeded_ipv6_network: "{{ unneeded_ipv6_network | combine({item: '0'}) }}"
   loop:
     - net.ipv6.conf.all.accept_source_route
     - net.ipv6.conf.default.accept_source_route
@@ -1401,7 +1408,7 @@
 
 - name: 3.3.2 - Ensure ICMP redirects are not accepted
   ansible.builtin.set_fact:
-    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({ item : '0' }) }}"
+    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({item: '0'}) }}"
   loop:
     - net.ipv4.conf.all.accept_redirects
     - net.ipv4.conf.default.accept_redirects
@@ -1410,7 +1417,7 @@
 
 - name: 3.3.2 - Ensure ICMP redirects are not accepted
   ansible.builtin.set_fact:
-    unneeded_ipv6_network: "{{ unneeded_ipv6_network | combine({ item : '0' }) }}"
+    unneeded_ipv6_network: "{{ unneeded_ipv6_network | combine({item: '0'}) }}"
   loop:
     - net.ipv6.conf.all.accept_redirects
     - net.ipv6.conf.default.accept_redirects
@@ -1420,7 +1427,7 @@
 
 - name: 3.3.3 - Ensure secure ICMP redirects are not accepted
   ansible.builtin.set_fact:
-    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({ item : '0' }) }}"
+    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({item: '0'}) }}"
   loop:
     - net.ipv4.conf.all.secure_redirects
     - net.ipv4.conf.default.secure_redirects
@@ -1429,7 +1436,7 @@
 
 - name: 3.3.4 - Ensure suspicious packets are logged
   ansible.builtin.set_fact:
-    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({ item : '1' }) }}"
+    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({item: '1'}) }}"
   loop:
     - net.ipv4.conf.all.log_martians
     - net.ipv4.conf.default.log_martians
@@ -1438,19 +1445,19 @@
 
 - name: 3.3.5 - Ensure broadcast ICMP requests are ignored
   ansible.builtin.set_fact:
-    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({ 'net.ipv4.icmp_echo_ignore_broadcasts' : '1' }) }}"
+    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({'net.ipv4.icmp_echo_ignore_broadcasts': '1'}) }}"
   tags:
     - 3.3.5
 
 - name: 3.3.6 - Ensure bogus ICMP responses are ignored
   ansible.builtin.set_fact:
-    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({ 'net.ipv4.icmp_ignore_bogus_error_responses' : '1' }) }}"
+    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({'net.ipv4.icmp_ignore_bogus_error_responses': '1'}) }}"
   tags:
     - 3.3.6
 
 - name: 3.3.7 - Ensure reverse path filtering is enabled
   ansible.builtin.set_fact:
-    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({ item : '1' }) }}"
+    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({item: '1'}) }}"
   loop:
     - net.ipv4.conf.all.rp_filter
     - net.ipv4.conf.default.rp_filter
@@ -1459,13 +1466,13 @@
 
 - name: 3.3.8 - Ensure TCP SYN Cookies is enabled
   ansible.builtin.set_fact:
-    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({ 'net.ipv4.tcp_syncookies' : '1' }) }}"
+    unneeded_ipv4_network: "{{ unneeded_ipv4_network | combine({'net.ipv4.tcp_syncookies': '1'}) }}"
   tags:
     - 3.3.8
 
 - name: 3.3.9 - Ensure IPv6 router advertisements are not accepted
   ansible.builtin.set_fact:
-    unneeded_ipv6_network: "{{ unneeded_ipv6_network | combine({ item : '0' }) }}"
+    unneeded_ipv6_network: "{{ unneeded_ipv6_network | combine({item: '0'}) }}"
   when: not ipv6_disable
   loop:
     - net.ipv6.conf.all.accept_ra
@@ -1495,7 +1502,7 @@
         reload: true
         state: present
         sysctl_set: true
-      loop: "{{ lookup('ansible.builtin.dict' , unneeded_ipv4_network) }}"
+      loop: "{{ lookup('ansible.builtin.dict', unneeded_ipv4_network) }}"
       notify: Flush network routes
 
 
@@ -1592,7 +1599,7 @@
           when: not tables_list
 
         - name: 3.5.2.5 - Create chains if they don't exist - input chain
-          ansible.builtin.command: nft create chain inet {{ tables_list|split }}.1
+          ansible.builtin.command: nft create chain inet {{ tables_list | split }}.1
           when: nftables_chians_output and nftables_chians_output | length > 0 and not tables_list
           tags:
             - 3.5.2.5
@@ -1603,7 +1610,7 @@
           when: not tables_list
 
         - name: 3.5.2.5 - Create chains if they don't exist - output chain
-          ansible.builtin.command: nft create chain inet {{ tables_list|split}}.1
+          ansible.builtin.command: nft create chain inet {{ tables_list | split }}.1
           when: nftables_chians_input and nftables_chians_input | length > 0 and not tables_list
           tags:
             - 3.5.2.5
@@ -1614,7 +1621,7 @@
           when: not tables_list
 
         - name: 3.5.2.5 - Create chains if they don't exist
-          ansible.builtin.command: nft create chain inet {{ tables_list|split }}.1
+          ansible.builtin.command: nft create chain inet {{ tables_list | split }}.1
           when: nftables_chians_input and nftables_chians_input | length > 0 and not tables_list
           tags:
             - 3.5.2.5
@@ -1839,7 +1846,7 @@
         src: audit_rules/sudolog.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.1
@@ -1851,7 +1858,7 @@
         src: audit_rules/datetime.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.4
@@ -1862,7 +1869,7 @@
         src: audit_rules/network.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.5
@@ -1876,7 +1883,7 @@
         src: audit_rules/bad-file-access.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.7
@@ -1887,7 +1894,7 @@
         src: audit_rules/user-group-info.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.8
@@ -1903,7 +1910,7 @@
         src: audit_rules/dac.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.9
@@ -1914,7 +1921,7 @@
         src: audit_rules/file-system-mounts.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.10
@@ -1925,7 +1932,7 @@
         src: audit_rules/sessions.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.11
@@ -1936,7 +1943,7 @@
         src: audit_rules/login.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.12
@@ -1947,7 +1954,7 @@
         src: audit_rules/delete.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.13
@@ -1958,7 +1965,7 @@
         src: audit_rules/MAC-policy.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.14
@@ -1969,7 +1976,7 @@
         src: audit_rules/chcon.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.15
@@ -1980,7 +1987,7 @@
         src: audit_rules/setfacl.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.16
@@ -1991,7 +1998,7 @@
         src: audit_rules/chacl.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.17
@@ -2002,7 +2009,7 @@
         src: audit_rules/usermod.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.18
@@ -2013,7 +2020,7 @@
         src: audit_rules/modules.rules
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.19
@@ -2025,7 +2032,7 @@
           -e 2
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       notify: Restart auditd
       tags:
         - 4.1.3.20
@@ -2037,7 +2044,7 @@
         dest: "{{ item }}"
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
         force: false
         content: ""
       loop:
@@ -2076,7 +2083,7 @@
         owner: root
         group: root
         create: true
-        mode: 0644
+        mode: '0644'
         block: |
           # Audit Tools
           /sbin/auditctl p+i+n+u+g+s+b+acl+xattrs+sha512
@@ -2099,7 +2106,7 @@
         force: false
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
       with_items:
         - /etc/cron.allow
         - /etc/at.allow
@@ -2109,7 +2116,7 @@
         path: /etc/crontab
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       tags:
         - 5.1.2
 
@@ -2118,7 +2125,7 @@
         path: "{{ item }}"
         owner: root
         group: root
-        mode: 0700
+        mode: '0700'
         state: directory
       loop:
         - /etc/cron.hourly
@@ -2138,7 +2145,7 @@
         path: /etc/cron.allow
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
         state: file
       when: cron_allow and cron_allow | length > 0
       tags:
@@ -2151,7 +2158,7 @@
         line: "{{ item.0 }}"
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
         create: true
       loop:
         - "{{ cron_allow }}"
@@ -2164,7 +2171,7 @@
         path: /etc/at.allow
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
         state: file
       when: at_allow and at_allow | length > 0
       tags:
@@ -2177,7 +2184,7 @@
         line: "{{ item.0 }}"
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
         create: true
       loop:
         - "{{ at_allow }}"
@@ -2204,7 +2211,7 @@
         dest: /etc/ssh/sshd_config
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       tags:
         - 5.2.1
 
@@ -2225,7 +2232,7 @@
             dest: "{{ item.path }}"
             owner: root
             group: root
-            mode: 0600
+            mode: '0600'
           loop: "{{ ssh_host_out.files }}"
 
     - name: 5.2.3 - Set Permissions on ssh public host keys
@@ -2245,7 +2252,7 @@
             dest: "{{ item.path }}"
             owner: root
             group: root
-            mode: 0644
+            mode: '0644'
           loop: "{{ ssh_hostpub_out.files }}"
 
     - name: 5.2.4 - Ensure SSH access is limited
@@ -2600,7 +2607,7 @@
       tags:
         - 5.4.1
 
-    - name: 5.4.2 - Require at least {{ password_min_length }} characters in passwords
+    - name: 5.4.2 - Require at least x characters in passwords - {{ password_min_length }}
       ansible.builtin.lineinfile:
         path: /etc/security/pwquality.conf
         line: minlen = {{ password_min_length }}
@@ -2618,7 +2625,7 @@
         insertafter: "#\ *deny"
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       tags:
         - 5.4.2
 
@@ -2630,7 +2637,7 @@
         insertafter: "#\ *deny"
         owner: root
         group: root
-        mode: 0600
+        mode: '0600'
       tags:
         - 5.4.2
 
@@ -2663,7 +2670,7 @@
       tags:
         - 5.4.4
 
-- name: 5.5.1.2 - Ensure password expiration is {{ password_expire_days }} days or less
+- name: 5.5.1.2 - Ensure password expiration is x days or less - {{ password_expire_days }}
   ansible.builtin.lineinfile:
     dest: /etc/login.defs
     regexp: '^PASS_MAX_DAYS\s*((?!{{ password_expire_days }}).)*$'
@@ -2692,14 +2699,14 @@
 
 # We need to do this the hard way because the user module that calls /usr/sbin/useradd does not support setting inactive days
 # The defaults perms are 0644 on the file, but after useradd is run against it, it changes to 0600, so we'll change it as well
-- name: 5.5.1.4 - Disable accounts that are inactive for {{ password_inactive_lock_days }} days after password expiration
+- name: 5.5.1.4 - Disable accounts that are inactive for x days after password expiration - {{ password_inactive_lock_days }}
   ansible.builtin.replace:
     path: /etc/default/useradd
     regexp: "^INACTIVE=((?!{{ password_inactive_lock_days }}).)*$"
     replace: "INACTIVE={{ password_inactive_lock_days }}"
     owner: root
     group: root
-    mode: 0600
+    mode: '0600'
   tags:
     - 5.5.1.4
 
@@ -2730,7 +2737,7 @@
   tags:
     - 5.5.4
 
-- name: 5.5.5 - Ensure default shell timeout is {{ shell_timeout }} seconds or less
+- name: 5.5.5 - Ensure default shell timeout is set to {{ shell_timeout }}
   ansible.builtin.blockinfile:
     path: "{{ item }}"
     block: "TMOUT={{ shell_timeout }}"
@@ -2842,7 +2849,9 @@
         - 5.1.2.3
       block:
         - name: 5.1.2.3 - Find any rsyslog files where all logs are being forwarded to a loghost
-          ansible.builtin.shell: /usr/bin/grep -l -s "^*.*[^I][^I]*@" /etc/rsyslog.conf /etc/rsyslog.d/*.conf
+          ansible.builtin.shell: |
+            set -o pipefail &&
+            /usr/bin/grep -l -s "^*.*[^I][^I]*@" /etc/rsyslog.conf /etc/rsyslog.d/*.conf
           register: rsyslog_forward_out
           changed_when: false
           failed_when: rsyslog_forward_out.rc == "2"
@@ -2864,7 +2873,7 @@
         create: true
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
         state: present
       notify: Restart rsyslog
       tags:
@@ -2876,7 +2885,7 @@
         dest: "/etc/rsyslog.d/{{ rsyslog_file }}"
         owner: root
         group: root
-        mode: 0640
+        mode: '0640'
       when: rsyslog_file is defined and rsyslog_file | length > 0
       tags:
         - 5.1.2.5
@@ -2946,7 +2955,7 @@
             create: true
             owner: root
             group: root
-            mode: 0644
+            mode: '0644'
           when: log_host is defined and log_host
 
         - name: 5.1.2.7 - Enable TCP Port listening on port {{ log_port }}
@@ -2957,7 +2966,7 @@
             create: true
             owner: root
             group: root
-            mode: 0644
+            mode: '0644'
           when: log_host is defined and log_host
 
         # Control 5.1.2.6 - Ensure rsyslog is configured to send logs to a remote log host is machine dependent
@@ -3011,7 +3020,7 @@
                 create: true
                 owner: root
                 group: root
-                mode: 0644
+                mode: '0644'
               when: log_host is defined and log_host
 
             - name: 5.1.2.7 - Enable TCP Port listening on port {{ log_port }}
@@ -3022,7 +3031,7 @@
                 create: true
                 owner: root
                 group: root
-                mode: 0644
+                mode: '0644'
               when: log_host is defined and log_host
 
 
@@ -3036,7 +3045,7 @@
     path: /etc/{{ item }}
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   loop:
     - passwd
     - group
@@ -3049,7 +3058,7 @@
     path: /etc/{{ item }}
     owner: root
     group: root
-    mode: 0000
+    mode: '0000'
   loop:
     - shadow
     - gshadow
@@ -3062,7 +3071,7 @@
     path: /etc/{{ item }}
     owner: root
     group: root
-    mode: 0000
+    mode: '0000'
   with_items:
     - passwd-
     - shadow-
@@ -3080,15 +3089,17 @@
   tags:
     - 6.1.9
   block:
-    - name: 6.1.9 - Find any world writiable files
-      ansible.builtin.shell: "/bin/df --local -P | /usr/bin/awk {' if (NR!=1) print $6'} | /usr/bin/xargs -I '{}' find '{}' -xdev -type f -perm -0002"
+    - name: 6.1.9 - Find any world writable files
+      ansible.builtin.shell: |
+        /bin/bash -c "set -o pipefail &&
+        /bin/df --local -P | /usr/bin/awk 'NR!=1 {print \$6}' | /usr/bin/xargs -I '{}' find '{}' -xdev -type f -perm -0002"
       register: ww_files
       changed_when: false
       check_mode: false
 
     - name: 6.1.9 - Print any world writable files found
       ansible.builtin.debug:
-        msg: "World writiable files found: {{ ww_files.stdout }}"
+        msg: "World writable files found: {{ ww_files.stdout }}"
       changed_when: true
       when: ww_files.stdout
 
@@ -3099,13 +3110,15 @@
     - 6.1.10
   block:
     - name: 6.1.10 - Find any unowned files
-      ansible.builtin.shell: "/bin/df --local -P | /usr/bin/awk {' if (NR!=1) print $6'} | /usr/bin/xargs -I '{}' find '{}' -xdev -nouser"
+      ansible.builtin.shell: |
+        /bin/bash -c "set -o pipefail &&
+        /bin/df --local -P | /usr/bin/awk 'NR!=1 {print \$6}' | /usr/bin/xargs -I '{}' find '{}' -xdev -nouser"
       register: uo_files
       changed_when: false
 
     - name: 6.1.10 - Print any unowned files found
       ansible.builtin.debug:
-        msg: "unowned files found: {{ uo_files.stdout }}"
+        msg: "Unowned files found: {{ uo_files.stdout }}"
       changed_when: true
       when: uo_files.stdout
 
@@ -3116,17 +3129,18 @@
     - 6.1.11
   block:
     - name: 6.1.11 - Find any ungrouped files
-      ansible.builtin.shell: "/bin/df --local -P | /usr/bin/awk {' if (NR!=1) print $6'} | /usr/bin/xargs -I '{}' find '{}' -xdev -nogroup"
+      ansible.builtin.shell: |
+        /bin/bash -c "set -o pipefail &&
+        /bin/df --local -P | /usr/bin/awk 'NR!=1 {print \$6}' | /usr/bin/xargs -I '{}' find '{}' -xdev -nogroup"
       register: ug_files
       changed_when: false
       check_mode: false
 
     - name: 6.1.11 - Print any ungrouped files found
       ansible.builtin.debug:
-        msg: "ungrouped files found: {{ uo_files.stdout }}"
+        msg: "Ungrouped files found: {{ ug_files.stdout }}"
       changed_when: true
       when: ug_files.stdout
-
 
 # Control 6.1.12, Audit SUID executables, is a verification and is system dependent.
 # Not implementing because it will always return some SUID files
@@ -3141,7 +3155,9 @@
     - 6.2.1
   block:
     - name: 6.2.1 - Check to see if there are any accounts with empty passwords
-      ansible.builtin.shell: "/bin/cat /etc/shadow | awk -F: '($2 == \"\" ) { print $1 }'"
+      ansible.builtin.shell: |
+        /bin/bash -c "set -o pipefail &&
+        /bin/cat /etc/shadow | /usr/bin/awk -F: '(\$2 == \"\" ) { print \$1 }'"
       changed_when: false
       register: empty_passwords
       check_mode: false
@@ -3196,10 +3212,12 @@
   tags:
     - 6.2.5
   block:
-    - name: 6.2.5 - find accounts with UID of 0
-      ansible.builtin.shell: "/usr/bin/cat /etc/passwd | awk -F: '($3 == 0) { print $1 }'"
+    - name: 6.2.5 - Find accounts with UID of 0
+      ansible.builtin.shell: |
+        /bin/bash -c "set -o pipefail &&
+        /usr/bin/cat /etc/passwd | /usr/bin/awk -F: '(\$3 == 0) { print \$1 }'"
       register: rootuid
-      changed_when: rootuid.rc >= 2
+      changed_when: false
       check_mode: false
 
     - name: 6.2.5 - Use script to pull the list of duplicate UIDs
@@ -3211,9 +3229,9 @@
 
     - name: 6.2.5 - Print report of duplicated UIDs to user
       ansible.builtin.debug:
-        msg: "{{ duplicate_uids.stdout_lines }}"
+        msg: "Duplicate UIDs found: {{ duplicate_uids.stdout_lines }}"
       changed_when: true
-      when: duplicate_uids.stdout
+      when: duplicate_uids.stdout_lines | length > 0
 
 - name: 6.2.6 - Report on duplicate GIDs in /etc/group
   tags:
@@ -3288,19 +3306,21 @@
   tags:
     - 6.2.10
   block:
-    - name: 6.2.10 - find accounts with UID of 0
-      ansible.builtin.shell: "/usr/bin/cat /etc/passwd | awk -F: '($3 == 0) { print $1 }'"
+    - name: 6.2.10 - Find accounts with UID of 0
+      ansible.builtin.shell: |
+        /bin/bash -c "set -o pipefail &&
+        /usr/bin/cat /etc/passwd | /usr/bin/awk -F: '(\$3 == 0) { print \$1 }'"
       register: rootuid
-      changed_when: rootuid.rc == 2
+      changed_when: false
       check_mode: false
 
-    - name: 6.2.10 - Report on mulitple accounts with UID of 0
+    - name: 6.2.10 - Report on multiple accounts with UID of 0
       ansible.builtin.debug:
         msg:
           - "Accounts with UID zero in addition to root"
-          - " {{ rootuid.stdout_lines }}"
+          - "{{ rootuid.stdout_lines }}"
       changed_when: true
-      when: rootuid.stdout != 'root'
+      when: rootuid.stdout_lines | length > 1
 
 - name: 6.2.10 - Report on users that do not have a home directory
   tags:

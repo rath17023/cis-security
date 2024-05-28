@@ -1,3 +1,4 @@
+---
 galaxy_info:
   author: David Glaser
   description: Apply The [Center for Internet Security](https://www.cisecurity.org/) controls against supported platforms.
@@ -15,50 +16,33 @@ galaxy_info:
   # - CC-BY-4.0
   license: GPL-2.0-or-later
 
-  min_ansible_version: 2.9
+  min_ansible_version: '2.9'
 
   # If this a Container Enabled role, provide the minimum Ansible Container version.
   # min_ansible_container_version:
 
-  #
-  # Provide a list of supported platforms, and for each platform a list of versions.
-  # If you don't wish to enumerate all versions for a particular platform, use 'all'.
-  # To view available platforms and versions (or releases), visit:
-  # https://galaxy.ansible.com/api/v1/platforms/
-  #
-  # platforms:
-  # - name: Fedora
-  #   versions:
-  #   - all
-  #   - 25
-  # - name: SomePlatform
-  #   versions:
-  #   - all
-  #   - 1.0
-  #   - 7
-  #   - 99.99
-  platforms:
-    - name: EL
-      versions:
-        - 8
-        - 7
-    - name: Fedora
-      versions:
-        - 28
-        - 29
-        - 30
-        - 31
-    - name: Ubuntu
-      versions:
-        - 18.04
-        - 20.04
-    - name: SLES
-      versions:
-        - 15
-    - name: Windows
-      versions:
-        - 2019
-        - 10
+ # platforms:
+ #   - name: EL
+ #     versions:
+ #       - 8
+ #       - 7
+ #   - name: Fedora
+ #     versions:
+ #       - 28
+ #       - 29
+ #       - 30
+ #       - 31
+ #   - name: Ubuntu
+ #     versions:
+ #       - 18.04
+ #       - 20.04
+ #   - name: SLES
+ #     versions:
+ #       - 15
+ #   - name: Windows
+ #     versions:
+ #       - 2019
+ #       - 10
 
   galaxy_tags: []
     # List tags for your role here, one per line. A tag is a keyword that describes
@@ -67,6 +51,10 @@ galaxy_info:
     #
     # NOTE: A tag is limited to a single word comprised of alphanumeric characters.
     #       Maximum 20 tags per role.
+
+# Added to satisfy ansible lint rules.
+  role_name: cis
+  namespace: dsglaser
 
 dependencies: []
   # List your role dependencies here, one per line. Be sure to remove the '[]' above,

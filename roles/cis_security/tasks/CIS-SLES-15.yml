@@ -3,5 +3,8 @@
 #  are using an older benchmark, the controls numbers are closer to the RHEL 7 ones, so
 #  it's easier to include that file and make the few changes for SUSE.
 
-- include: type-files/redhat-7-type.yml
-- include: type-files/SLES-addons.yml
+- name: Import tasks SLES 15 (redhat 7)
+  ansible.builtin.include_tasks: type-files/redhat-7-type.yml
+
+- name: Import tasks SLES addons
+  ansible.builtin.include_tasks: type-files/SLES-addons.yml
