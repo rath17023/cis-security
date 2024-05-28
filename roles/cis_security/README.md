@@ -96,7 +96,7 @@ Note: Some automation tasks handle multiple controls. In the role you may see so
     path: /etc/{{item}}
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   loop:
     - passwd
     - group

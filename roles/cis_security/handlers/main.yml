@@ -6,7 +6,9 @@
 # https://access.redhat.com/solutions/2664811
 
 - name: Restart auditd
-  ansible.builtin.command: service auditd restart
+  ansible.builtin.service:
+    name: auditd
+    state: restarted
   when: ansible_os_family != "windows"
   listen: "Restart auditd"
 
@@ -61,13 +63,14 @@
     name: iptables
     state: started
 
-- name: Restart tmpfs
-  ansible.builtin.systemd:
-    name: tmp.mount
-    state: restarted
-    enabled: true
-    masked: false
-    daemon_reload: true
+## ERROR: Unable to enable service tmp.mount: Failed to enable unit: File /etc/systemd/system/local-fs.target.wants/tmp.mount already exists.
+# - name: Restart tmpfs
+#   ansible.builtin.systemd:
+#     name: tmp.mount
+#     state: restarted
+#     enabled: true
+#     masked: false
+#     daemon_reload: true
 
 # Call the grub config file rebuilding program
 # There is no grub module, so we have to do it with shell
@@ -109,3 +112,8 @@
 - name: Restart ufw
   community.general.ufw:
     state: enabled
+
+- name: Regather facts after selinux change
+  ansible.builtin.setup:
+  tags:
+    - 1.6.1.1

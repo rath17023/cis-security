@@ -4,18 +4,23 @@
 #  and under what circumstances.
 
 - name: 1.3 - Filesystem integrity checking w/AIDE
-  block:
-  - name: 1.3.1 - Initialize AIDE if it hasn't been already (/usr/bin/aide)
-    ansible.builtin.command: /usr/bin/aide --init
-    when: ( not aide_path.stat.exists or not aide_path.stat.isreg ) and ansible_distribution == "SLES"
-    tags:
-      - 1.3.1
   tags:
     - 1.3.0
+  block:
+    - name: 1.3.1 - Initialize AIDE if it hasn't been already (/usr/bin/aide)
+      ansible.builtin.command: /usr/bin/aide --init
+      when: ( not aide_path.stat.exists or not aide_path.stat.isreg ) and ansible_distribution == "SLES"
+      tags:
+        - 1.3.1
 
 - name: 1.6.0 - Mandatory Access Control
+  tags:
+    - 1.6.0
   block:
     - name: 1.6.2 - Configure AppArmor (SLES only)
+      when: ansible_distribution == "SLES"
+      tags:
+        - 1.6.2
       block:
         - name: 1.6.2.1 Ensure Apparmor is not disabled in bootloader configuration
           ansible.builtin.replace:
@@ -44,11 +49,6 @@
           ansible.builtin.debug:
             msg: "Either SELinux or AppArmor is not installed. Please enable them with tags and restart"
           when: "'libselinux1' in ansible_facts.packages and 'libapparmor1' in ansible_facts.packages"
-      when: ansible_distribution == "SLES"
-      tags:
-        - 1.6.2
-  tags:
-    - 1.6.0
 
 - name: 2.2.2 - Set default runlevel (non graphical)
   ansible.builtin.file:
@@ -66,7 +66,7 @@
     group: root
   when: graphical_interface
 
-- name: create empty list for unneeded packages
+- name: Create empty list for unneeded packages
   ansible.builtin.set_fact:
     unneeded_packages: []
   tags:
@@ -74,13 +74,13 @@
 
 - name: 2.2.6 - add openldap server to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'openldap2' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['openldap2'] }}"
   tags:
     - 2.2.6
 
 - name: 2.2.10 - Remove httpd; add to removal list
   ansible.builtin.set_fact:
-    unneeded_packages: "{{ unneeded_packages + [ 'apache2' ] }}"
+    unneeded_packages: "{{ unneeded_packages + ['apache2'] }}"
   when: http_server is defined and not http_server
   tags:
     - 2.2.10
@@ -88,7 +88,7 @@
 # With the list complete, use it with the system's package manager
 #  to remove packages from the system that are not needed.
 - name: Process removal list
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "{{ unneeded_packages }}"
     state: absent
   tags:
@@ -104,6 +104,9 @@
     - 5.1.1
 
 - name: 5.3.4 - SLES specific password settings
+  when: ansible_distribution == "SLES"
+  tags:
+    - 5.3.4
   block:
     - name: 5.3.4 - Determine if we are currently using sha512 password
       ansible.builtin.lineinfile:
@@ -121,9 +124,6 @@
         regexp: 'pam_unix.so'
         replace: 'pam_unix.so    sha512'
       when: not sha512_exist.found
-  when: ansible_distribution == "SLES"
-  tags:
-    - 5.3.4
 
 - name: 5.4.4 - Ensure umask is set (SLES)
   ansible.builtin.replace:
@@ -145,7 +145,7 @@
     create: true
   owner: root
   group: root
-  mode: 0644
+  mode: '0644'
   loop:
     - /etc/bash.bashrc.local
     - /etc/profile.local

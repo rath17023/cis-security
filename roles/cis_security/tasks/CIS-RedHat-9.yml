@@ -1,4 +1,5 @@
 ---
 # indclude the type file for RHEL 8 type machines
 
-- include: type-files/redhat-9-type.yml
+- name: Import tasks Redhat 9
+  ansible.builtin.include_tasks: type-files/redhat-9-type.yml

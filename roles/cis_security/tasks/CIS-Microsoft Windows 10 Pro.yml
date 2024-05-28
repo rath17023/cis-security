@@ -1,4 +1,5 @@
 ---
 # indclude the type file for MS Windows type machines
 
-- include: type-files/MS-Server-type.yml
+- name: Import tasks Microsoft Server (Win 10)
+  ansible.builtin.include_tasks: type-files/MS-Server-type.yml
